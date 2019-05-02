@@ -1,0 +1,941 @@
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+
+
+namespace _2019022501
+{
+    public partial class Griffinasia : System.Web.UI.Page
+    {
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+
+            String dbConnnectionString = ConfigurationManager.ConnectionStrings["DataBaseConnectionString"].ConnectionString;
+            String tablename = "";
+            String tablename1 = "";
+            var dbConnection = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection1 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection2 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection3 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection4 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection5 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+
+
+            String dbConnnectionString3 = ConfigurationManager.ConnectionStrings["DataBaseConnectionString"].ConnectionString;
+            var dbConnection6 = new System.Data.SqlClient.SqlConnection(dbConnnectionString3);
+
+            DateTime dateTime = DateTime.Today;
+            var date = DateTime.Today; //Set start date
+            //var countryCode = CountryCode.US; //Set country
+
+
+            //added 2 days, no saturday and sunday
+            DateTime resultDate = dateTime;
+              resultDate = resultDate.AddDays(1);
+            if (resultDate.DayOfWeek != DayOfWeek.Saturday &&
+                resultDate.DayOfWeek != DayOfWeek.Sunday) { }
+            else {
+                resultDate = resultDate.AddDays(1);
+                if (resultDate.DayOfWeek != DayOfWeek.Saturday &&
+                resultDate.DayOfWeek != DayOfWeek.Sunday) { }
+                else
+                {
+                    resultDate = resultDate.AddDays(1);
+                }
+            }
+            resultDate = resultDate.AddDays(1);
+            if (resultDate.DayOfWeek != DayOfWeek.Saturday &&
+                resultDate.DayOfWeek != DayOfWeek.Sunday) { }
+            else
+            {
+                resultDate = resultDate.AddDays(1);
+                if (resultDate.DayOfWeek != DayOfWeek.Saturday &&
+                resultDate.DayOfWeek != DayOfWeek.Sunday) { }
+                else
+                {
+                    resultDate = resultDate.AddDays(1);
+                }
+            }
+
+            string s = resultDate.ToShortDateString();
+           
+            String deleteString = "delete  from CommissionForCOD  where TradeDate='" + dateTime + "'";
+            Response.Write(deleteString);
+            Response.Write("<br>");
+            
+            dbConnection6.Open();
+            SqlCommand cmd1 = new SqlCommand(deleteString, dbConnection6);
+            cmd1.ExecuteNonQuery();
+            dbConnection6.Close();
+
+
+            //dbConnection1.Open();
+            //var dataAdapter6 = new SqlDataAdapter(deleteString, dbConnection);
+            //var commandBuilder1 = new SqlCommandBuilder(dataAdapter6);
+            //dbConnection1.Close();
+            SqlDataReader oReader3;
+            //find table
+            var queryTable = " SELECT TOP 1 ConfirmationTable,ConfirmationTable2 FROM ConfirmationTable1 order by id desc";
+            dbConnection4.Open();
+            SqlCommand dataAdapter3 = new SqlCommand(queryTable, dbConnection4);
+
+            using (oReader3 = dataAdapter3.ExecuteReader())
+            {
+                while (oReader3.Read())
+                {
+                    tablename = oReader3["ConfirmationTable"].ToString();
+                    tablename1 = oReader3["ConfirmationTable2"].ToString();
+                }
+            }
+            dbConnection4.Close();
+
+            //var dataAdapter = new SqlDataAdapter(queryString, dbConnection);
+
+            //var commandBuilder = new SqlCommandBuilder(dataAdapter);
+            //var ds = new DataSet();
+            //dataAdapter.Fill(ds);
+
+            //parameters
+            String principalmore;
+            String security_stockname = "";
+            String BuySell = "";
+            decimal principal = 0;
+            int share = 0;
+
+            string ISIN = "";
+            string insertsql = "";
+            decimal rate1 = 0;
+            decimal rate2 = 0;
+            decimal rate3 = 0;
+            decimal rate1_1 = 0;
+            decimal rate2_1 = 0;
+            decimal rate3_1 = 0;
+            decimal commission1 = 0;
+            decimal commission2 = 0;
+            decimal commission3 = 0;
+            decimal commissionAmount = 0;
+            String CommissionTypeWord = "";
+            String EOD_VWAP = "";
+
+            String commissionType = "";
+            decimal GriffinAmount = 0;
+            decimal sec = 0;
+            decimal Fixedsec = 0;
+            //find table
+            var queryStringforAvg = " select * from [Commission].[dbo].[" + tablename + "] where filled !=0";
+            dbConnection4.Open();
+            dataAdapter3 = new SqlCommand(queryStringforAvg, dbConnection4);
+
+            using (oReader3 = dataAdapter3.ExecuteReader())
+            {
+                while (oReader3.Read())
+                {
+                    
+                    decimal avg = System.Convert.ToDecimal(oReader3["AvgPrc"]);
+                    decimal Principal = Math.Round(System.Convert.ToDecimal(oReader3["AvgPrc"]) * System.Convert.ToInt32(oReader3["filled"]), 2, MidpointRounding.AwayFromZero);
+                    String UpdateAvg = "Update [Commission].[dbo].[" + tablename + "] set Principal =" + Principal + " where AvgPrc=" + System.Convert.ToDecimal(oReader3["AvgPrc"]) + " and filled=" + System.Convert.ToInt32(oReader3["filled"].ToString()) + "";
+                    //Response.Write("<br>");
+                    //Response.Write("UpdateAvg:" + UpdateAvg);
+                    String dbConnnectionString1 = ConfigurationManager.ConnectionStrings["DataBaseConnectionString"].ConnectionString;
+                    dbConnection2.Open();
+                    SqlCommand cmd = new SqlCommand(UpdateAvg, dbConnection2);
+                    cmd.ExecuteNonQuery();
+                    dbConnection2.Close();
+                    //}
+                   
+
+                }
+            }
+
+            dbConnection4.Close();
+
+
+
+            var queryString = "select Upper(substring(Account,CHARINDEX('/', Account, 0)+1,9)) AS ACCOUNTNO, B_S, Security, Filled,AvgPrc,Principal,Security_Type_2,ISIN,EOD_VWAP,VWAP_for_All_Trades__Realtime_  from [Commission].[dbo].[" + tablename + "]  where account like '%/%' and [Principal] is not NULL and [Principal]<>0 and Account !='AZU8966612' and filled !=0"
+                                + " union all " +
+                              "select replace(Upper(substring(instructions, 1, 9)),' ','') AS ACCOUNTNO, B_S, Security, Filled, AvgPrc, Principal, Security_Type_2, ISIN,EOD_VWAP,VWAP_for_All_Trades__Realtime_  from[Commission].[dbo].[" + tablename + "]  where[Principal] is not NULL and[Principal] <> 0 and Account like '%AZU8966612%' and filled !=0"
+                              + " union all " +
+                              "select Upper(Account) AS ACCOUNTNO, B_S, Security, Filled,AvgPrc,Principal,Security_Type_2,ISIN,EOD_VWAP,VWAP_for_All_Trades__Realtime_  from [Commission].[dbo].[" + tablename + "]  where  [Principal] is not NULL and [Principal]<>0 and Account like '%J%' and filled !=0";
+            Response.Write("HHHHHHqueryString:"+ queryString);
+            Response.Write("<br>");
+            dbConnection1.Open();
+            SqlCommand dataAdapter = new SqlCommand(queryString, dbConnection1);
+
+            using (SqlDataReader oReader = dataAdapter.ExecuteReader())
+            {
+                while (oReader.Read())
+                {
+                    if (System.Convert.ToInt32(oReader["filled"]) == 0) { }
+                    else
+                    {
+                        //reset parameter
+                        sec = 0;
+                        Fixedsec = 0;
+                        rate1 = 0;
+                        rate2 = 0;
+                        rate3 = 0;
+                        rate1_1 = 0;
+                        rate2_1 = 0;
+                        rate3_1 = 0;
+                        commission1 = 0;
+                        commission2 = 0;
+                        commission3 = 0;
+                        commissionAmount = 0;
+                        commissionType = "";
+                        
+                        EOD_VWAP = string.IsNullOrEmpty(oReader["EOD_VWAP"].ToString()) ? oReader["EOD_VWAP"].ToString() : oReader["VWAP_for_All_Trades__Realtime_"].ToString();
+                        GriffinAmount = 0;
+                        CommissionTypeWord = "0 - COD";
+                        ISIN = "";
+                        ISIN = oReader["ISIN"].ToString();
+                        Response.Write("<br><br>ISIN:");
+                        Response.Write(ISIN);
+                        Response.Write("<br><br>");
+                        //preffered stock transfer
+                        if (oReader["Security_Type_2"].ToString() == "Preferred Stock")
+                        {
+                            //Response.Write("IT IS A Preferred Stock");
+                            //Response.Write("<br>");
+                            //Response.Write("ISIN:");
+                            //Response.Write(oReader["ISIN"].ToString());
+                            
+                            var queryString1 = " select StockSymbol from [Commission].[dbo].[PreferredStock]  where StockNo ='" + oReader["ISIN"].ToString() + "'";
+                            //Response.Write("<br><br>queryString1:");
+                            //Response.Write(queryString1);
+
+                            dbConnection.Open();
+                            SqlCommand dataAdapter1 = new SqlCommand(queryString1, dbConnection);
+
+                            using (SqlDataReader oReader1 = dataAdapter1.ExecuteReader())
+                            {
+                                while (oReader1.Read())
+                                {
+
+                                    //Response.Write("<br><br>StockSymbol:");
+                                    //Response.Write(oReader1["StockSymbol"].ToString());
+                                    security_stockname = oReader1["StockSymbol"].ToString();
+                                }
+                            }
+                            dbConnection.Close();
+                        }
+                        else
+                        {
+                            security_stockname = oReader["Security"].ToString();
+                            
+
+                        }
+
+                        //b_s transfer
+                        if (oReader["B_S"].ToString() == "BUY")
+                        {
+                            BuySell = "Bought";
+                        }
+                        else
+                        {
+                            BuySell = "Sold";
+                            var querySecSql = "select ContraAccount from [Commission].[dbo].[ContraAccount] where ContraAccount like '%" + oReader["ACCOUNTNO"].ToString() + "%'";
+
+                            Response.Write("bbbbbbbbbsecquerySecSql:" + querySecSql);
+                            Response.Write("<br>");
+                            dbConnection5.Open();
+                            SqlCommand dataAdapter4 = new SqlCommand(querySecSql, dbConnection5);
+                            Fixedsec = (Math.Ceiling(System.Convert.ToDecimal(oReader["principal"]) * (decimal)(0.00207))) / 100;
+                            using (SqlDataReader oReader2 = dataAdapter4.ExecuteReader())
+                            {
+                                while (oReader2.Read())
+                                {
+                                    if (string.IsNullOrEmpty(oReader2["ContraAccount"].ToString()))
+                                    {
+                                        
+                                        Response.Write(oReader2["ContraAccount"].ToString() + "--------no sec fee");
+                                        Response.Write("<br>");
+                                    }
+                                    else
+                                    {
+                                        
+                                        sec = (Math.Ceiling(System.Convert.ToDecimal(oReader["principal"]) * (decimal)(0.00207))) / 100;
+                                        Response.Write(oReader2["ContraAccount"].ToString() + "--------sec fee:"+ sec);
+                                        Response.Write("<br>");
+                                    }
+                                }
+                            }
+                            dbConnection5.Close();
+                        }
+                        //Principal>50k or not                    
+                        principal = System.Convert.ToDecimal(oReader["Principal"]);
+                        share = System.Convert.ToInt32(oReader["filled"]);
+                        if (principal > 500000)
+                        {
+                            //Response.Write(principal);
+                            //Response.Write("----------principal > 500000");
+                            principalmore = "True";
+                        }
+                        else
+                        {
+                            //Response.Write(principal);
+                            //Response.Write("----------principal < 500000");
+                            principalmore = "False";
+
+                        }
+
+                        //calculate commission fee-principal
+                        var queryString2 = " select TOP 1 * from [Commission].[dbo].[rate]  where over50k ='" + principalmore + "' and accountNo like'%" + oReader["AccountNO"].ToString() + "%' ";
+                        Response.Write(queryString2);
+                        Response.Write("<br>");
+
+                        dbConnection3.Open();
+                        SqlCommand dataAdapter2 = new SqlCommand(queryString2, dbConnection3);
+
+                        using (SqlDataReader oReader1 = dataAdapter2.ExecuteReader())
+                        {
+                            while (oReader1.Read())
+                            {
+                               
+                               
+                               
+
+                                if (string.IsNullOrEmpty(oReader1["rate1"].ToString()))
+                                {
+                                    Response.Write(oReader["AccountNO"].ToString() + "--------rate1 is null");
+                                    Response.Write("<br>");
+                                }
+                                else
+                                {
+                                    rate1 = System.Convert.ToDecimal(oReader1["rate1"]);
+                                    //Response.Write(rate1);
+                                    //Response.Write("<br>");
+                                    commission1 = rate1 * principal;
+                                    Response.Write("account:" + oReader1["accountno"]);
+                                    Response.Write("commission1:" + commission1);
+                                    Response.Write("rate1:" + rate1);
+                                    Response.Write("principal:" + principal);
+                                    Response.Write("<br>");
+                                }
+
+                                if (string.IsNullOrEmpty(oReader1["rate2"].ToString()))
+                                {
+                                    Response.Write("rate2 is null");
+                                    Response.Write("<br>");
+                                }
+                                else
+                                {
+                                    rate2 = System.Convert.ToDecimal(oReader1["rate2"]);
+                                    //Response.Write(rate2);
+                                    //Response.Write("<br>");
+                                    commission2 = rate2 * share;
+                                    //Response.Write(commission2);
+                                    //Response.Write("<br>");
+                                }
+
+                                if (string.IsNullOrEmpty(oReader1["rate3"].ToString()))
+                                {
+                                    //Response.Write("rate3 is null");
+                                    //Response.Write("<br>");
+                                }
+                                else
+                                {
+                                    rate3 = System.Convert.ToInt32(oReader1["rate3"]);
+                                    Response.Write(rate3);
+                                    Response.Write("<br>");
+                                    commission3 = rate3;
+                                    //Response.Write(commission3);
+                                    //Response.Write("<br>");
+                                }
+
+                                //check 3 rate are not null
+                                if (string.IsNullOrEmpty(oReader1["rate1"].ToString()) & string.IsNullOrEmpty(oReader1["rate2"].ToString()) & string.IsNullOrEmpty(oReader1["rate3"].ToString()))
+                                {
+                                    Response.Write("can't find any rate.");
+                                    Response.Write("<br>");
+                                    commissionAmount = 0;
+                                    commissionType = "retailer";
+                                    CommissionTypeWord = "1 - CASH";
+                                    rate1 = Convert.ToDecimal(0.0005);
+                                    //Response.Write(rate1);
+                                    //Response.Write("<br>");
+                                    commission1 = Math.Round(Convert.ToDecimal(rate1 * principal), 2, MidpointRounding.AwayFromZero);
+                                    
+                                    Response.Write("account:" + oReader1["accountno"]);
+                                    Response.Write("commission1:" + commission1);
+                                    Response.Write("rate1:" + rate1);
+                                    Response.Write("principal:" + principal);
+                                    Response.Write("<br>");
+                                    Response.Write("CommissionTypeWord:"+ CommissionTypeWord);
+                                    Response.Write("<br>");
+
+                                }
+                                else
+                                {
+                                    //check use which one
+                                    if (commission1 != 0)
+                                    {
+                                        if (commission2 != 0)
+                                        {
+                                            if (commission3 != 0)
+                                            {
+                                                //compare 123
+                                                if (commission1 < commission3)
+                                                {
+                                                    if (commission2 < commission3)
+                                                    {
+                                                        //3
+                                                        commissionAmount = commission3;
+                                                        commissionType = "min";
+                                                    }
+                                                    else
+                                                    {
+                                                        //ask 2 or3?(2)
+                                                        commissionAmount = commission2;
+                                                        commissionType = "share";
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if (commission1 < commission2)
+                                                    {
+                                                        //1
+                                                        commissionAmount = commission1;
+                                                        commissionType = "percentage";
+                                                    }
+
+                                                    else
+                                                    {
+                                                        //2
+                                                        commissionAmount = commission2;
+                                                        commissionType = "share";
+                                                    }
+
+                                                }
+
+
+                                            }
+                                            else
+                                            {
+                                                //compare 12
+                                                if (commission1 < commission2)
+                                                {
+                                                    //2
+                                                    commissionAmount = commission1;
+                                                    commissionType = "percentage";
+
+
+                                                }
+                                                else
+                                                {
+                                                    //1
+                                                    commissionAmount = commission2;
+                                                    commissionType = "share";
+                                                }
+
+                                            }
+
+                                        }
+                                        else
+                                        {
+                                            if (commission3 != 0)
+                                            {
+                                                //compare 13
+                                                if (commission1 < commission3)
+                                                {
+                                                    //3
+                                                    commissionAmount = commission3;
+                                                    commissionType = "min";
+                                                }
+                                                else
+                                                {
+                                                    //1
+                                                    commissionAmount = commission1;
+                                                    commissionType = "percentage";
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                //1
+                                                commissionAmount = commission1;
+                                                commissionType = "percentage";
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (commission2 != 0)
+                                        {
+                                            if (commission3 != 0)
+                                            {
+                                                //compare 23
+                                                if (commission2 < commission3)
+                                                {
+                                                    //3
+                                                    commissionAmount = commission3;
+                                                    commissionType = "min";
+                                                }
+                                                else
+                                                {
+                                                    //2
+                                                    commissionAmount = commission2;
+                                                    commissionType = "share";
+                                                }
+                                            }
+                                            else
+                                            {
+                                                //2
+                                                commissionAmount = commission2;
+                                                commissionType = "share";
+                                            }
+                                        }
+                                        else
+                                        {
+                                            //3
+                                            commissionAmount = commission3;
+                                            commissionType = "min";
+                                        }
+                                    }
+
+                                    if (commissionType == "percentage")
+                                    {
+                                        if (string.IsNullOrEmpty(oReader1["rate1_1"].ToString()))
+                                        {
+                                            //Response.Write("rate1_1 is null");
+                                            //Response.Write("<br>");
+                                        }
+                                        else
+                                        {
+                                            rate1_1 = System.Convert.ToDecimal(oReader1["rate1_1"].ToString());
+                                            GriffinAmount = rate1_1 * principal;
+                                            //Response.Write(rate1_1);
+                                            //Response.Write("<br>");
+                                        }
+                                    }
+                                    if (commissionType == "share")
+                                    {
+                                        if (string.IsNullOrEmpty(oReader1["rate2_1"].ToString()))
+                                        {
+                                            //Response.Write("rate2_1 is null");
+                                            //Response.Write("<br>");
+                                        }
+                                        else
+                                        {
+                                            rate2_1 = System.Convert.ToDecimal(oReader1["rate2_1"].ToString());
+                                            GriffinAmount = rate2_1 * share;
+                                            //Response.Write(rate2_1);
+                                            //Response.Write("<br>");
+                                        }
+                                    }
+                                    if (commissionType == "min")
+                                    {
+                                        if (string.IsNullOrEmpty(oReader1["rate3_1"].ToString()))
+                                        {
+                                            //Response.Write("rate3_1 is null");
+                                            //Response.Write("<br>");
+                                            //compare12
+                                            if (!string.IsNullOrEmpty(oReader1["rate1_1"].ToString()))
+                                            {
+                                                if (!string.IsNullOrEmpty(oReader1["rate2_1"].ToString()))
+                                                {
+                                                    rate1_1 = System.Convert.ToDecimal(oReader1["rate1_1"].ToString());
+                                                    rate2_1 = System.Convert.ToDecimal(oReader1["rate2_1"].ToString());
+                                                    if (rate1_1 * principal > rate2_1 * share)
+                                                    {
+                                                        //2
+                                                        rate2_1 = System.Convert.ToDecimal(oReader1["rate2_1"].ToString());
+                                                        GriffinAmount = rate2_1 * share;
+                                                        //Response.Write(rate2_1);
+                                                        //Response.Write("<br>");
+                                                    }
+                                                    else
+                                                    {
+                                                        //1
+                                                        GriffinAmount = rate1_1 * principal;
+                                                        //Response.Write(rate1_1);
+                                                        //Response.Write("<br>");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    //1
+                                                    GriffinAmount = rate1_1 * principal;
+                                                    //Response.Write(rate1_1);
+                                                    //Response.Write("<br>");
+
+                                                }
+                                                rate1_1 = System.Convert.ToDecimal(oReader1["rate1_1"].ToString());
+                                                GriffinAmount = rate1_1 * principal;
+                                                //Response.Write(rate1_1);
+                                                //Response.Write("<br>");
+                                            }
+                                            else
+                                            {
+                                                if (!string.IsNullOrEmpty(oReader1["rate2_1"].ToString()))
+                                                {
+                                                    //2
+                                                    rate2_1 = System.Convert.ToDecimal(oReader1["rate2_1"].ToString());
+                                                    GriffinAmount = rate2_1 * share;
+                                                    //Response.Write(rate2_1);
+                                                    //Response.Write("<br>");
+                                                }
+                                                else
+                                                {
+                                                    Response.Write("rate1_1,rate2_1, and rate3_1 is null");
+                                                    Response.Write("<br>");
+                                                    GriffinAmount = 0;
+                                                }
+
+                                            }
+
+                                        }
+                                        else
+                                        {
+                                            rate3_1 = System.Convert.ToDecimal(oReader1["rate3_1"].ToString());
+                                            GriffinAmount = rate3_1;
+                                            Response.Write(rate3_1);
+                                            Response.Write("<br>");
+                                        }
+
+                                    }
+                                    
+                                }
+                            }
+                        }
+                        dbConnection3.Close();
+                        Response.Write("############commission1:" + commission1);
+                        if (commissionAmount==0) {
+                            commissionType = "retailer";
+                            CommissionTypeWord = "1 - CASH";
+                            
+                            //Response.Write(rate1);
+                            //Response.Write("<br>");
+                            commission1 = Math.Round(Convert.ToDecimal(0.0005 * System.Convert.ToInt32(oReader["Principal"])), 2, MidpointRounding.AwayFromZero);
+                            //NOT INSERT THIS COMMISSION AMOUNT
+                            //Response.Write("############account:" + oReader["ACCOUNTNO"].ToString());
+                            //Response.Write("commission1:" + commission1);
+                            
+                            
+                            //Response.Write("<br>");
+                            //Response.Write("CommissionTypeWord:" + CommissionTypeWord);
+                            //Response.Write("<br>");
+
+                        }
+                        commissionAmount = commissionAmount - sec;
+                        if (commissionType == "retailer") {
+                            CommissionTypeWord= "1 - CASH";
+                            insertsql = "Insert into CommissionForCOD (AccountNO,AccountType,BorS,Symbol,Quantity,Price,Principal,TradeDate,SettleDate,CommissionType,CommissionType1,sec,ISIN,EOD_VWAP) values ('"
+                       + oReader["ACCOUNTNO"].ToString() + "','" + CommissionTypeWord + "','" + BuySell + "','" + security_stockname + "'," + oReader["Filled"].ToString() + "," + oReader["AvgPrc"].ToString()
+                       + "," + oReader["Principal"].ToString() + ",'" + dateTime + "','" + s + "','" + commissionType + "','','"+ Math.Round(Fixedsec, 2, MidpointRounding.AwayFromZero) + "','"+ISIN+"','"+ EOD_VWAP + "')";
+                        }
+                        else
+                        {
+                        insertsql = "Insert into CommissionForCOD (AccountNO,AccountType,BorS,Symbol,Quantity,Price,Principal,TradeDate,SettleDate,CommissionAmount,CommissionType,GriffinAmount,CommissionType1,sec,ISIN,EOD_VWAP) values ('"
+                        + oReader["ACCOUNTNO"].ToString() + "','" + CommissionTypeWord + "','" + BuySell + "','" + security_stockname + "'," + oReader["Filled"].ToString() + "," + oReader["AvgPrc"].ToString()
+                        + "," + oReader["Principal"].ToString() + ",'" + dateTime + "','" + s + "','" + Math.Round(commissionAmount,2,MidpointRounding.AwayFromZero) + "','" + commissionType + "','" + GriffinAmount + "','COM','"+ Math.Round(Fixedsec, 2, MidpointRounding.AwayFromZero) + "','"+ISIN+ "','" + EOD_VWAP + "')";
+
+                        }
+                        
+                        Response.Write("insertsql:" + insertsql);
+                        Response.Write("<br>");
+                        String dbConnnectionString1 = ConfigurationManager.ConnectionStrings["DataBaseConnectionString"].ConnectionString;
+                        dbConnection2.Open();
+                        SqlCommand cmd3 = new SqlCommand(insertsql, dbConnection2);
+                        cmd3.ExecuteNonQuery();
+                        dbConnection2.Close();
+
+                    }
+                }
+
+                // myConnection.Close();
+            }
+
+
+
+            dbConnection1.Close();
+
+
+            //AHU638931,AHU638410,J3Q001673,J3Q001681 SET AVG PRICE to (8 digital decimal)
+            String SelectDecimalAccount = "Select DecimalAccountNo from DecimalAccountNo";
+            Response.Write(SelectDecimalAccount);
+            Response.Write("<br>");
+            String DecimalAccountNoString= "";
+            dbConnection1.Open();
+            SqlCommand dataAdapter7 = new SqlCommand(SelectDecimalAccount, dbConnection1);
+            using (oReader3 = dataAdapter7.ExecuteReader())
+            {
+                while (oReader3.Read())
+                {
+                    if (!string.IsNullOrEmpty(oReader3["DecimalAccountNo"].ToString()))
+                    {
+                        if (DecimalAccountNoString == "")
+                        {
+                            DecimalAccountNoString = "'"+oReader3["DecimalAccountNo"].ToString()+"'";
+                        }
+                        else
+                        {
+                            DecimalAccountNoString = DecimalAccountNoString + ",'" + oReader3["DecimalAccountNo"].ToString()+"'";
+
+                        }
+
+                       
+                    }
+                }
+            }
+            dbConnection1.Close();
+            dbConnection1.Open();
+            String SelectDecimalAccountinCommissionForCOD = "select * from CommissionForCOD where accountNO in (" + DecimalAccountNoString + ") and tradeDate ='" + dateTime + "' ";
+            Response.Write("SelectDecimalAccountinCommissionForCOD=" + SelectDecimalAccountinCommissionForCOD);
+            Response.Write("<br>");
+            dbConnection.Open();
+            dataAdapter7 = new SqlCommand(SelectDecimalAccountinCommissionForCOD, dbConnection1);
+
+            using (oReader3 = dataAdapter7.ExecuteReader())
+            {
+                while (oReader3.Read())
+                {
+                    String SelectDecimalAccountAvg = "";
+                    if (oReader3["BorS"].ToString() == "Bought")
+                    {
+                        SelectDecimalAccountAvg = "select sum(quantity) as quantity,sum(quantity*price) as principal from " + tablename1 + " where account like ('%" + oReader3["AccountNO"].ToString() + "%') and "
+                            + "Side='B' and ticker like '%" + oReader3["Symbol"].ToString() + "%' and quantity>0 and price<>0";
+                        Response.Write("SelectDecimalAccountAvg=" + SelectDecimalAccountAvg);
+                        Response.Write("<br>");
+
+                    } else if (oReader3["BorS"].ToString() == "Sold") {
+                        SelectDecimalAccountAvg = "select sum(quantity) as quantity,sum(quantity*price) as principal from " + tablename1 + " where account like ('%" + oReader3["AccountNO"].ToString() + "%') and "
+                            + "Side='S' and ticker like '%" + oReader3["Symbol"].ToString() + "%' and quantity>0 and price<>0";
+                        Response.Write("SelectDecimalAccountAvg=" + SelectDecimalAccountAvg);
+                        Response.Write("<br>");
+
+                    }
+                    Response.Write("===============================================================");
+                    Response.Write("SelectDecimalAccountAvg=" + SelectDecimalAccountAvg);
+                    Response.Write("<br>");
+                    dbConnection6.Open();
+                    var dataAdapter8 = new SqlCommand(SelectDecimalAccountAvg, dbConnection6);
+                    using (SqlDataReader oReader1 = dataAdapter8.ExecuteReader())
+                    {
+                        while (oReader1.Read())
+                        {
+                            if (!string.IsNullOrEmpty(oReader1["quantity"].ToString()))
+                            {
+
+                                double a = System.Convert.ToDouble(oReader1["principal"].ToString())/System.Convert.ToDouble(oReader1["quantity"].ToString());
+                                Response.Write("幾位數principal=" + System.Convert.ToDecimal(oReader1["principal"].ToString()));
+                                Response.Write("<br>");
+                                Response.Write("幾位數quantity=" + System.Convert.ToDecimal(oReader1["quantity"].ToString()));
+                                Response.Write("<br>");
+                                Response.Write("幾位數a=" + a);
+                                Response.Write("<br>");
+
+                                Response.Write("----------------------------------------------------");
+                                String UpdateAvgPrice1 = "Update [Commission].[dbo].[CommissionForCOD] set [Commission].[dbo].[CommissionForCOD].Price=" + Math.Round(a,8, MidpointRounding.AwayFromZero) + " where accountNO='" + oReader3["AccountNO"].ToString() + "' and [Commission].[dbo].[CommissionForCOD].tradeDate ='" + dateTime + "' and [Commission].[dbo].[CommissionForCOD].BorS ='" + oReader3["BorS"].ToString() + "' and Symbol like '%" + oReader3["Symbol"].ToString() + "%'";
+                                Response.Write("UpdateAvgPrice1="+UpdateAvgPrice1);
+                                Response.Write("<br>");
+                                String dbConnnectionString1 = ConfigurationManager.ConnectionStrings["DataBaseConnectionString"].ConnectionString;
+                                dbConnection2.Open();
+                                SqlCommand cmd = new SqlCommand(UpdateAvgPrice1, dbConnection2);
+                                cmd.ExecuteNonQuery();
+                                dbConnection2.Close();
+                            }
+                        }
+                    }
+                    dbConnection6.Close();
+                }
+            }
+            
+            dbConnection1.Close();
+            //AHU655,AHU656 MEGA ACCOUNT SET AVG PRICE
+
+            String UpdateAvgPrice = " SELECT Symbol,[Commission].[dbo].[CommissionForCOD].BorS as BorS, SUM([Commission].[dbo].[CommissionForCOD].Principal) AS P, SUM([Commission].[dbo].[CommissionForCOD].Quantity) AS Q,AccountNO "
+                                   + " FROM [Commission].[dbo].[CommissionForCOD] WHERE"
+                                   + "  ( [Commission].[dbo].[CommissionForCOD].AccountNO LIKE '%AHU655%' OR [Commission].[dbo].[CommissionForCOD].AccountNO LIKE '%AHU656%') and [Commission].[dbo].[CommissionForCOD].tradeDate ='" + dateTime + "' GROUP BY Symbol,BorS, AccountNO";
+                                   
+            Response.Write("UpdateAvgPrice:"+ UpdateAvgPrice);
+            Response.Write("<br>");
+
+
+            dbConnection6.Open();
+            var dataAdapter6 = new SqlCommand(UpdateAvgPrice, dbConnection6);
+
+            using (oReader3 = dataAdapter6.ExecuteReader())
+            {
+                while (oReader3.Read())
+                {
+                    if (!string.IsNullOrEmpty(oReader3["Symbol"].ToString()))
+                    {
+                        double a = System.Convert.ToDouble(oReader3["P"].ToString())/System.Convert.ToDouble(oReader3["Q"].ToString());
+                        
+                        String UpdateAvgPrice1 = "Update [Commission].[dbo].[CommissionForCOD] set [Commission].[dbo].[CommissionForCOD].Price=" + Math.Round(a, 4, MidpointRounding.AwayFromZero) + " where Symbol='" + oReader3["Symbol"].ToString() + "' and [Commission].[dbo].[CommissionForCOD].tradeDate ='" + dateTime + "' and [Commission].[dbo].[CommissionForCOD].BorS ='" + oReader3["BorS"].ToString() + "' and AccountNO='"+ oReader3["AccountNO"].ToString() + "'";
+                        Response.Write("UpdateAvgPrice1:"+UpdateAvgPrice1);
+                        Response.Write("<br>");
+                        String dbConnnectionString1 = ConfigurationManager.ConnectionStrings["DataBaseConnectionString"].ConnectionString;
+                        dbConnection2.Open();
+                        SqlCommand cmd = new SqlCommand(UpdateAvgPrice1, dbConnection2);
+                        cmd.ExecuteNonQuery();
+                        dbConnection2.Close();
+                    }
+                }
+            }
+            dbConnection6.Close();
+
+     
+           
+
+            //AHU661123 combine order (6 digital)
+            String combineOrder = "SELECT AccountNO, BorS, Symbol, ISIN, count(AccountNO) as a, sum(principal) as principal, sum(sec) as sec, sum(Quantity) as Quantity, sum(CommissionAmount) as CommissionAmount, sum(GriffinAmount) as GriffinAmount"
+                                  + " FROM CommissionForCOD"
+                                  + " WHERE AccountNO = 'AHU661123' and tradeDate ='" + dateTime + "' "
+                                  + " GROUP BY AccountNO, BorS, Symbol, ISIN";
+            Response.Write("combineOrdersql=" + combineOrder);
+            Response.Write("<br>");
+
+
+            dbConnection6.Open();
+            dataAdapter6 = new SqlCommand(combineOrder, dbConnection6);
+
+            using (oReader3 = dataAdapter6.ExecuteReader())
+            {
+                while (oReader3.Read())
+                {
+                    if (System.Convert.ToInt32(oReader3["a"]) > 1)
+                    {
+                        //DELETE DATA
+                        deleteString = "delete  from CommissionForCOD  where AccountNO='" + oReader3["AccountNO"] + "' and BorS='" + oReader3["BorS"] + "' and Symbol='" + oReader3["Symbol"] + "' and tradeDate ='" + dateTime + "'";
+                        Response.Write("deleteString:"+deleteString);
+                        Response.Write("<br>");
+                        dbConnnectionString3 = ConfigurationManager.ConnectionStrings["DataBaseConnectionString"].ConnectionString;
+                        var dbConnection7 = new System.Data.SqlClient.SqlConnection(dbConnnectionString3);
+                        dbConnection7.Open();
+                        cmd1 = new SqlCommand(deleteString, dbConnection7);
+                        cmd1.ExecuteNonQuery();
+                        dbConnection7.Close();
+
+
+
+                        //INSERT DATA
+                        double a = (System.Convert.ToDouble(oReader3["Principal"]) / System.Convert.ToDouble(oReader3["Quantity"]));
+                        String InsertCombineOrder = "Insert into CommissionForCOD (AccountNO,AccountType,BorS,Symbol,Quantity,Price,Principal,TradeDate,SettleDate,CommissionAmount,GriffinAmount,ISIN, EOD_VWAP,sec,CommissionType1) values ('"
+                            + oReader3["ACCOUNTNO"].ToString() + "','0 - COD','" + oReader3["BorS"].ToString() + "','" + oReader3["Symbol"].ToString() + "'," + oReader3["Quantity"].ToString() + "," + Math.Round(a, 6, MidpointRounding.AwayFromZero) + ","
+                            + oReader3["Principal"].ToString() + ",'" + dateTime + "','" + s + "','" + oReader3["CommissionAmount"].ToString() + "','" + oReader3["GriffinAmount"].ToString() + "', '"+ oReader3["ISIN"].ToString() + "', '',"+ oReader3["sec"].ToString() + ",'COM')";
+                        Response.Write("InsertCombineOrder:" + InsertCombineOrder);
+                        Response.Write("<br>");
+                        String dbConnnectionString1 = ConfigurationManager.ConnectionStrings["DataBaseConnectionString"].ConnectionString;
+                        dbConnection2.Open();
+                        SqlCommand cmd = new SqlCommand(InsertCombineOrder, dbConnection2);
+                        cmd.ExecuteNonQuery();
+                        dbConnection2.Close();
+                    }
+                }
+            }
+            dbConnection6.Close();
+
+
+            //dbConnection1.Open();
+            //var dataAdapter6 = new SqlDataAdapter(deleteString, dbConnection);
+            //var commandBuilder1 = new SqlCommandBuilder(dataAdapter6);
+            //dbConnection1.Close();
+            string filePath = @"C:\Users\nina\Desktop\dailyconformation\test.csv";
+            string delimiter = ",";
+            String excelString = "";
+            excelString = "Account #,Account Type,Bought/Sold,Symbol/CUSIP,Quantity,Price,TradeDate,SettlementDate,PrimeTrade,Exchange,Blotter,Order Ref # (Branch),Order Ref # (Seq),Original Input Source,Executing Broker,Contra Broker,Contra Account #,Contra Account Type,P/A Indicator,Execution Time,Principal Amount,Commission Type,Commission Amt,Contra Commission Type,Contra Commission Amt,Sales Credit Type,Sales Credit Amt,TRN Fee,Riskless Principal Ind,Mark Up/Mark Down,Service Fee,IP 1 #,IP 1 Percent,IP 2 #,IP 2 Percent,Postage,Foreign Service Fee,Prefigure Net Amount,Trailers/Comments 1,Trailers/Comments 2,Trailers/Comments 3,Memo,Legend Code 1,Legend Code 2,Wire Code 1,Wire Code 2,IBD Order Receipt Date,IBD Order Receipt Time,IBD Order Receipt Time Zone,Order Received From,Pershing Order Receipt Date,Pershing Order Receipt Time,Pershing Order Receipt Time Zone,Pershing Order Received From,Discretion Exercised,Notes";
+            StringBuilder sb = new StringBuilder();
+            string[][] output = new string[][]{
+                    new string[]{excelString},
+
+                         };
+
+
+            int length = output.GetLength(0);
+            //for (int index = 0; index < length; index++)
+                sb.AppendLine(string.Join(delimiter, output[0]));
+            //File.WriteAllText(filePath, sb.ToString());
+            excelString = "";
+
+
+            queryString = "select AccountNO as 'Account #', AccountType as 'Account Type',BorS as 'Bought/Sold',Symbol as 'Symbol/CUSIP',Quantity as Quantity, Price," +
+                " '' as 'TradeDate','' as 'SettlementDate', '' as 'PrimeTrade', 'OTC (NSCC) - OTC' as 'Exchange', '0 - Average Price' as 'Blotter', 'dlq' as 'Order Ref # (Branch)', ROW_NUMBER() OVER(ORDER BY AccountNO) as 'Order Ref # (Seq)' , " +
+                "'NetExchange Pro TCMS' as 'Original Input Source', '' as 'Executing Broker', '' as 'Contra Broker', " +
+                " 'AZU896661' as 'Contra Account #'," +
+                "'2 - Margin' as 'Contra Account Type', '' as 'P/A Indicator', '' as 'Execution Time','' as 'Principal Amount', CommissionType1 as 'Commission Type', CommissionAmount as 'Commission Amt'," +
+                " '' as 'Contra Commission Type', '' as 'Contra Commission Amt', '' as 'Sales Credit Type', '' as 'Sales Credit Amt', '' as 'TRN Fee', '' as 'Riskless Principal Ind'," +
+                "'' as 'Mark Up/Mark Down', '' as 'Service Fee', '' as 'IP 1 #', '' as 'IP 1 Percent', '' as 'IP 2 #', '' as 'IP 2 Percent', '' as 'Postage', '' as 'Foreign Service Fee', "
+                + "'' as 'Prefigure Net Amount', '' as 'Trailers/Comments 1', '' as 'Trailers/Comments 2', '' as 'Trailers/Comments 3', '' as 'Memo', '' as 'Legend Code 1', "
+                + "'' as 'Legend Code 2', '' as 'Wire Code 1', '' as 'Wire Code 2', '' as 'IBD Order Receipt Date', '' as 'IBD Order Receipt Time', '' as 'IBD Order Receipt Time Zone',"
+                + " '' as 'Order Received From', '' as 'Pershing Order Receipt Date', '' as 'Pershing Order Receipt Time', '' as 'Pershing Order Receipt Time Zone', '' as 'Pershing Order Received From', "
+                + " '' as 'Discretion Exercised', '' as 'Notes' from[Commission].[dbo].[CommissionForCOD]  where TradeDate='" + dateTime + "'";
+            //Response.Write(queryString);
+            //Response.Write("<br>");
+
+            dbConnection1.Open();
+            var dataAdapter5 = new SqlDataAdapter(queryString, dbConnection1);
+            var commandBuilder = new SqlCommandBuilder(dataAdapter5);
+            var ds = new DataSet();
+            dataAdapter5.Fill(ds);
+            GridView1.DataSource = ds.Tables[0];
+            GridView1.DataBind();
+            dbConnection1.Close();
+            
+            SqlDataReader oReader9;
+            //find table
+            queryString = "select AccountNO, AccountType,BorS,Symbol,Quantity, Price," +
+                " '' as 'TradeDate','' as 'SettlementDate', '' as 'PrimeTrade', 'OTC (NSCC) - OTC' as 'Exchange', '0 - Average Price' as 'Blotter', 'dlq' as 'OrderRefBranch', ROW_NUMBER() OVER(ORDER BY AccountNO) as 'OrderRefSeq' , " +
+                "'NetExchange Pro TCMS' as 'OriginalInputSource', '' as 'ExecutingBroker', '' as 'ContraBroker', " +
+                " 'AZU896661' as 'ContraAccount'," +
+                "'2 - Margin' as 'ContraAccountType', '' as 'PAIndicator', '' as 'ExecutionTime','' as 'PrincipalAmount', CommissionType1 as 'CommissionType', CommissionAmount as 'CommissionAmt'," +
+                " '' as 'ContraCommissionType', '' as 'ContraCommissionAmt', '' as 'SalesCreditType', '' as 'SalesCreditAmt', '' as 'TRNFee', '' as 'RisklessPrincipalInd'," +
+                "'' as 'MarkUpMarkDown', '' as 'ServiceFee', '' as 'IP1', '' as 'IP1Percent', '' as 'IP2', '' as 'IP2Percent', '' as 'Postage', '' as 'ForeignServiceFee', "
+                + "'' as 'PrefigureNetAmount', '' as 'TrailersComments1', '' as 'TrailersComments2', '' as 'TrailersComments3', '' as 'Memo', '' as 'LegendCode1', "
+                + "'' as 'LegendCode2', '' as 'WireCode1', '' as 'WireCode2', '' as 'IBDOrderReceiptDate', '' as 'IBDOrderReceiptTime', '' as 'IBDOrderReceiptTimeZone',"
+                + " '' as 'OrderReceivedFrom', '' as 'PershingOrderReceiptDate', '' as 'PershingOrderReceiptTime', '' as 'PershingOrderReceiptTimeZone', '' as 'PershingOrderReceivedFrom', "
+                + " '' as 'DiscretionExercised', '' as 'Notes' from[Commission].[dbo].[CommissionForCOD]  where TradeDate='" + dateTime + "'";
+            dbConnection4.Open();
+            SqlCommand dataAdapter9 = new SqlCommand(queryString, dbConnection4);
+            //int index = 0;
+
+            using (oReader9 = dataAdapter9.ExecuteReader())
+            {
+               
+                while (oReader9.Read())
+                {                  
+                    excelString = oReader9["AccountNO"].ToString() + "," + oReader9["AccountType"].ToString() + "," + oReader9["BorS"].ToString() + "," + oReader9["Symbol"].ToString();
+                    excelString = excelString+ ","+ oReader9["Quantity"].ToString() + "," + oReader9["Price"].ToString() + "," + oReader9["TradeDate"].ToString() + "," + oReader9["SettlementDate"].ToString();
+                    excelString = excelString + "," + oReader9["PrimeTrade"].ToString() + "," + oReader9["Exchange"].ToString() + "," + oReader9["Blotter"].ToString() + "," + oReader9["OrderRefBranch"].ToString();
+                    excelString = excelString + "," + oReader9["OrderRefSeq"].ToString() + "," + oReader9["OriginalInputSource"].ToString() + "," + oReader9["ExecutingBroker"].ToString() + "," + oReader9["ContraBroker"].ToString();
+                    excelString = excelString + "," + oReader9["ContraAccount"].ToString() + "," + oReader9["ContraAccountType"].ToString() + "," + oReader9["PAIndicator"].ToString() + "," + oReader9["ExecutionTime"].ToString();
+                    excelString = excelString + "," + oReader9["PrincipalAmount"].ToString() + "," + oReader9["CommissionType"].ToString() + "," + oReader9["CommissionAmt"].ToString() + "," + oReader9["ContraCommissionType"].ToString();
+                    excelString = excelString + "," + oReader9["ContraCommissionAmt"].ToString() + "," + oReader9["SalesCreditType"].ToString() + "," + oReader9["SalesCreditAmt"].ToString() + "," + oReader9["TRNFee"].ToString();
+                    excelString = excelString + "," + oReader9["RisklessPrincipalInd"].ToString() + "," + oReader9["MarkUpMarkDown"].ToString() + "," + oReader9["ServiceFee"].ToString() + "," + oReader9["IP1"].ToString();
+                    excelString = excelString + "," + oReader9["IP1Percent"].ToString() + "," + oReader9["IP2"].ToString() + "," + oReader9["IP2Percent"].ToString() + "," + oReader9["Postage"].ToString();
+                    excelString = excelString + "," + oReader9["ForeignServiceFee"].ToString() + "," + oReader9["PrefigureNetAmount"].ToString() + "," + oReader9["TrailersComments1"].ToString() + "," + oReader9["TrailersComments2"].ToString();
+                    excelString = excelString + "," + oReader9["TrailersComments3"].ToString() + "," + oReader9["Memo"].ToString() + "," + oReader9["LegendCode1"].ToString() + "," + oReader9["LegendCode2"].ToString();
+                    excelString = excelString + "," + oReader9["WireCode1"].ToString() + "," + oReader9["WireCode2"].ToString() + "," + oReader9["IBDOrderReceiptDate"].ToString() + "," + oReader9["IBDOrderReceiptTime"].ToString();
+                    excelString = excelString + "," + oReader9["IBDOrderReceiptTimeZone"].ToString() + "," + oReader9["OrderReceivedFrom"].ToString() + "," + oReader9["PershingOrderReceiptDate"].ToString() + "," + oReader9["PershingOrderReceiptTime"].ToString();
+                    excelString = excelString + "," + oReader9["PershingOrderReceiptTimeZone"].ToString() + "," + oReader9["PershingOrderReceivedFrom"].ToString() + "," + oReader9["DiscretionExercised"].ToString() + "," + oReader9["Notes"].ToString();
+                    string[][] output1 = new string[][]{
+                    new string[]{excelString},
+
+                         };
+
+                    int length1 = output1.GetLength(0);
+
+                    //for (int index1 = 0; index1 < length1; index1++)
+                        sb.AppendLine(string.Join(delimiter, output1[0]));
+                    //File.AppendAllText(filePath, sb.ToString());
+                    
+
+                    //index = index + 1;
+                }
+            }
+            File.WriteAllText(filePath, sb.ToString());
+            dbConnection4.Close();
+        }
+    }
+}
