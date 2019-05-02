@@ -1,0 +1,345 @@
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using Microsoft.Office.Interop.Excel;
+
+namespace _2019022501
+{
+    public partial class Griffinasia : System.Web.UI.Page
+    {
+        
+        // private Microsoft.Office.Interop.Excel.Worksheet xlWorkSheet;
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+
+            //output Cathay
+            String dbConnnectionString = ConfigurationManager.ConnectionStrings["DataBaseConnectionString"].ConnectionString;
+
+            String AccountNO = "";
+            String BorS = "";
+            String TradeDate = "";
+            String SettleDate = "";
+            String Symbol = "";
+            String ISIN = "";
+            String CompanyName = "";
+            int Quantity = 0;
+            Decimal Price = 0;
+            Decimal CommissionAmount = 0;
+            Decimal sec = 0;
+            Decimal GriffinAmount = 0;
+            
+            Decimal Principal = 0;
+            Decimal Totalmoney = 0;
+            int x = 2;
+
+
+            var dbConnection = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection1 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection2 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection3 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection4 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+            var dbConnection5 = new System.Data.SqlClient.SqlConnection(dbConnnectionString);
+
+            DateTime dateTime = DateTime.Today;
+
+            String sDate = DateTime.Now.ToString();
+            DateTime datevalue = (Convert.ToDateTime(sDate.ToString()));
+
+            String dy = datevalue.Day.ToString();
+            String mn = datevalue.Month.ToString();
+            String yy = datevalue.Year.ToString();
+
+            SqlDataReader oReader;
+            SqlDataReader oReader1;
+            SqlDataReader oReader3;
+            Microsoft.Office.Interop.Excel.Application xlApp = new Microsoft.Office.Interop.Excel.Application();
+
+            if (xlApp == null)
+            {
+
+                Response.Write("<br>");
+                Response.Write("Excel is not properly installed!!");
+                return;
+            }
+
+            object misValue = System.Reflection.Missing.Value;
+            //xlWorkSheet先清空
+            Microsoft.Office.Interop.Excel.Workbook xlWorkBook;
+            Microsoft.Office.Interop.Excel.Worksheet xlWorkSheet;
+
+            xlWorkBook = xlApp.Workbooks.Add(misValue);
+            xlWorkSheet = (Microsoft.Office.Interop.Excel.Worksheet)xlWorkBook.Worksheets.get_Item(1);
+
+
+
+            xlWorkSheet.Cells[1, 1] = "Account";
+            xlWorkSheet.Cells[1, 1].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 1].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 2] = "Trade Date";
+            xlWorkSheet.Cells[1, 2].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 2].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 2].EntireRow.AutoFit();
+            xlWorkSheet.Cells[1, 2].EntireColumn.AutoFit();
+            xlWorkSheet.Cells[1, 3] = "Settlement  Date";
+            xlWorkSheet.Cells[1, 3].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 3].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 3].EntireRow.AutoFit();
+            xlWorkSheet.Cells[1, 3].EntireColumn.AutoFit();
+            xlWorkSheet.Cells[1, 4] = "Sec. ID";
+            xlWorkSheet.Cells[1, 4].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 4].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 5] = "ISIN Code";
+            xlWorkSheet.Cells[1, 5].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 5].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+
+            xlWorkSheet.Cells[1, 6] = "Sec. Description";
+            xlWorkSheet.Cells[1, 6].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 6].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 7] = "Trans.";
+            xlWorkSheet.Cells[1, 7].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 7].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 8] = "Total Exe. Qty.";
+            xlWorkSheet.Cells[1, 8].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 8].EntireRow.AutoFit();
+            xlWorkSheet.Cells[1, 8].EntireColumn.AutoFit();
+            xlWorkSheet.Cells[1, 8].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 9] = "Exec. Price";
+            xlWorkSheet.Cells[1, 9].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 9].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 9].EntireRow.AutoFit();
+            xlWorkSheet.Cells[1, 9].EntireColumn.AutoFit();
+            xlWorkSheet.Cells[1, 10] = "Principal Amt. ";
+            xlWorkSheet.Cells[1, 10].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 10].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 11] = "Griff. ";
+            xlWorkSheet.Cells[1, 11].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 11].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 12] = "SEC Fees";
+            xlWorkSheet.Cells[1, 12].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 12].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 13] = "Commission";
+            xlWorkSheet.Cells[1, 13].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 13].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 14] = "Status";
+            xlWorkSheet.Cells[1, 14].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 14].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+            xlWorkSheet.Cells[1, 15] = "Net Amt.";
+            xlWorkSheet.Cells[1, 15].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+            xlWorkSheet.Cells[1, 15].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightBlue);
+
+            x = 2;
+
+            //find data
+            var queryTable = "select * FROM [Commission].[dbo].[CommissionForCOD]  where (AccountNO LIKE '%AHU658%' or AccountNO LIKE '%AHU659%' or AccountNO LIKE '%AHU660%' or AccountNO LIKE '%AHU661%' or AccountNO LIKE '%AHU662%') AND TradeDate = '" + dateTime + "'";
+            Response.Write("<br>");
+            Response.Write("queryTable:" + queryTable);
+            //queryTable = "select * FROM [Commission].[dbo].[CommissionForCOD] where AccountNO LIKE '%AHU658%' AND TradeDate = '3/26/2019 12:00:00 AM'";
+
+            dbConnection4.Open();
+            SqlCommand dataAdapter3 = new SqlCommand(queryTable, dbConnection4);
+
+
+            using (oReader3 = dataAdapter3.ExecuteReader())
+            {
+
+                while (oReader3.Read())
+                {
+                    AccountNO = oReader3["AccountNO"].ToString();
+                   
+                   
+                            TradeDate = oReader3["TradeDate"].ToString();
+                            SettleDate = oReader3["SettleDate"].ToString();
+
+                            String SettleDate1 = SettleDate;
+                            DateTime datevalue1 = (Convert.ToDateTime(SettleDate1.ToString()));
+
+                            String dy1 = datevalue1.Day.ToString();
+                            String mn1 = datevalue1.Month.ToString();
+                            String yy1 = datevalue1.Year.ToString();
+
+                            BorS = oReader3["BorS"].ToString();
+                            Symbol = oReader3["Symbol"].ToString();
+                    CompanyName = "";
+                    string queryCompany = "select companyname from companylist where Symbol='" + Symbol + "'";
+
+                    Response.Write("<br>");
+                    Response.Write("queryCompany:" + queryCompany);
+                    dbConnection2.Open();
+                    SqlCommand dataAdapter2 = new SqlCommand(queryCompany, dbConnection2);
+                    using (oReader = dataAdapter2.ExecuteReader())
+                    {
+
+                        while (oReader.Read())
+                        {
+
+                            CompanyName = oReader["companyname"].ToString();
+                        }
+                    }
+                    dbConnection2.Close();
+                    if (CompanyName == "") {
+                        string querySymbolName = "select symbolDESCRIPTION from EquityHoldings where Symbol='" + Symbol + "'";
+
+                        Response.Write("<br>");
+                        Response.Write("queryTable:" + querySymbolName);
+                        dbConnection1.Open();
+                        SqlCommand dataAdapter1 = new SqlCommand(querySymbolName, dbConnection1);
+                        using (oReader1 = dataAdapter1.ExecuteReader())
+                        {
+
+                            while (oReader1.Read())
+                            {
+                                if (!string.IsNullOrEmpty(oReader1["symbolDESCRIPTION"].ToString()))
+                                    CompanyName = oReader1["symbolDESCRIPTION"].ToString();
+                                else
+                                {
+
+
+                                }
+                            }
+
+                        }
+                        dbConnection1.Close();
+
+                    }
+                    
+                    ISIN = oReader3["ISIN"].ToString();
+                            Quantity = System.Convert.ToInt32(oReader3["Quantity"]);
+                            Price = System.Convert.ToDecimal(oReader3["Price"]);
+                            Principal = Math.Round(Quantity * Price, 2, MidpointRounding.AwayFromZero);
+                    if (oReader3["CommissionAmount"].ToString()=="")
+                    {
+                        CommissionAmount = 0;
+                    }
+                    else {
+                        CommissionAmount = System.Convert.ToDecimal(oReader3["CommissionAmount"]);
+                    }
+                    
+                    sec = System.Convert.ToDecimal(oReader3["sec"]);
+
+                    if (oReader3["GriffinAmount"].ToString() == "")
+                    {
+                        GriffinAmount = 0;
+                    }
+                    else
+                    {
+                        GriffinAmount = System.Convert.ToDecimal(oReader3["GriffinAmount"]);
+                    }
+
+                   
+                            
+
+                            if (oReader3["BorS"].ToString() == "Bought")
+                            {
+                                BorS = "B";
+                                Totalmoney = Principal + CommissionAmount;
+                            }
+                            else if (oReader3["BorS"].ToString() == "Sold")
+                            {
+                                BorS = "S";
+                                Totalmoney = Principal - CommissionAmount - sec;
+                            }
+
+
+                            //xls
+                           
+                            xlWorkSheet.Cells[x, 1] = AccountNO;
+                            xlWorkSheet.Cells[x, 1].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 1].EntireRow.AutoFit();
+                            xlWorkSheet.Cells[x, 1].EntireColumn.AutoFit();
+                           
+                            xlWorkSheet.Cells[x, 2] = "" + yy + "." + mn + "." + dy + "";
+                            xlWorkSheet.Cells[x, 2].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 3] = "" + yy1 + "." + mn1 + "." + dy1 + "";
+                            xlWorkSheet.Cells[x, 3].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 4] = Symbol;
+                            xlWorkSheet.Cells[x, 4].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+
+                            xlWorkSheet.Cells[x, 5] = ISIN;
+                            xlWorkSheet.Cells[x, 5].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 5].EntireRow.AutoFit();
+                            xlWorkSheet.Cells[x, 5].EntireColumn.AutoFit();
+
+                    
+                            xlWorkSheet.Cells[x, 6] = CompanyName;
+                            xlWorkSheet.Cells[x, 6].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 6].EntireRow.AutoFit();
+                            xlWorkSheet.Cells[x, 6].EntireColumn.AutoFit();
+                            xlWorkSheet.Cells[x, 7] = BorS;
+                            xlWorkSheet.Cells[x, 7].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 8] = Quantity;
+                            xlWorkSheet.Cells[x, 8].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 9] = Price;
+                            xlWorkSheet.Cells[x, 9].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+
+                            xlWorkSheet.Cells[x, 10] = Principal;
+                            xlWorkSheet.Cells[x, 10].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 11] = GriffinAmount;
+                            xlWorkSheet.Cells[x, 11].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            
+                            xlWorkSheet.Cells[x, 12] = sec;
+                            xlWorkSheet.Cells[x, 12].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 13] = CommissionAmount;
+                            xlWorkSheet.Cells[x, 13].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 13].EntireRow.AutoFit();
+                            xlWorkSheet.Cells[x, 13].EntireColumn.AutoFit();
+                            xlWorkSheet.Cells[x, 14] = "Executed";
+                            xlWorkSheet.Cells[x, 14].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 14].EntireRow.AutoFit();
+                            xlWorkSheet.Cells[x, 14].EntireColumn.AutoFit();
+                            xlWorkSheet.Cells[x, 15] = Totalmoney;
+                            xlWorkSheet.Cells[x, 15].Borders.LineStyle = Microsoft.Office.Interop.Excel.XlLineStyle.xlContinuous;
+                            xlWorkSheet.Cells[x, 15].EntireRow.AutoFit();
+                            xlWorkSheet.Cells[x, 15].EntireColumn.AutoFit();
+
+
+
+
+                    x = x + 1;
+                      
+                   
+
+
+                }
+            }
+
+
+            dbConnection4.Close();
+            
+            x = x + 2;
+
+            xlWorkSheet.Cells[x, 1] = "Settlement Instruction:";
+            xlWorkSheet.Cells[x, 1].Font.Bold = true;
+            x = x + 1;
+            xlWorkSheet.Cells[x, 1] = "PERSHING'S DTC NO.0443";
+
+            x = x + 1;
+            xlWorkSheet.Cells[x, 1] = "AGENT  BANK  NO.00443";
+
+            x = x + 1;
+            xlWorkSheet.Cells[x, 1] = "INSTITUTION  NO.00443";
+
+            x = x + 1;
+            xlWorkSheet.Cells[x, 1] = "PERSHING INTERNAL ACCOUNT NO. AHU616XXX";
+
+
+
+            xlWorkBook.SaveAs(@"O:\dailyconformation\Cathay Securities-Confirmation-" + yy + "." + mn + "." + dy + ".xls", Microsoft.Office.Interop.Excel.XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, Microsoft.Office.Interop.Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
+            xlWorkBook.Close(true, misValue, misValue);
+
+            xlApp.Quit();
+
+
+            Marshal.ReleaseComObject(xlWorkSheet);
+        }
+    }
+}
